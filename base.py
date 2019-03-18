@@ -3,6 +3,7 @@ from functools import partial
 from deap import base, tools, creator, gp
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
+
 import random
 import numpy as np
 
@@ -28,16 +29,18 @@ class GeneticFeatureSelection:
         self.mutation_rate = mutation_rate
 
     def _evaluate(self, individual, x_train, x_test, y_train, y_test):
-        clf = SVC(gamma='auto')
+        # TODO : make possible selecting evaluator. Currently fixed with SVC.
         print('--evaluate--')
-        print(individual)
-        print(x_train.columns)
-        print(x_test.columns)
         x_train = x_train[individual]
         x_test = x_test[individual]
-        clf.fit(x_train, y_train)
+
+        clf = SVC(gamma='auto')
+        clf.fit(x_train, y_train.values.ravel())
+
         y_hat = clf.predict(x_test)
-        return np.mean(y_hat == y_test)
+        score = -np.mean(y_hat == y_test.values)
+        less_feature_is_better = len(individual) / len(x_train.columns)
+        return score, less_feature_is_better
 
     def _evaluate_individuals(self, population, X, y):
         individuals = [individual for individual in population if not individual.fitness.valid]
@@ -59,6 +62,7 @@ class GeneticFeatureSelection:
     def _get_columns(self, data_frame):
         return data_frame.columns
 
+    # fitting for feature selection.
     def fit(self, X, y):
         self.column_name_list = self._get_columns(X)
         self._init_deap()
@@ -66,7 +70,7 @@ class GeneticFeatureSelection:
         self._toolbox.register("evaluate", self._evaluate_individuals, self._pop, X, y)
         self._toolbox.evaluate()
 
-
+        # ToDO: loop for GA. Repeat as number of generations
 
     def get_best_features(self):
         pass
