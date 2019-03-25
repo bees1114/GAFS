@@ -23,10 +23,11 @@ class GeneticFeatureSelection:
 
     def __init__(self, generations, population_size, crossover_rate=0.5, mutation_rate=0.1):
         self.column_name_list = None
-        self.generations = generations
-        self.population_size = population_size
-        self.crossover_rate = crossover_rate
-        self.mutation_rate = mutation_rate
+        self._pop = None
+        self._generations = generations
+        self._population_size = population_size
+        self._crossover_rate = crossover_rate
+        self._mutation_rate = mutation_rate
 
     def _evaluate(self, individual, x_train, x_test, y_train, y_test):
         # TODO : make possible selecting evaluator. Currently fixed with SVC.
@@ -66,11 +67,17 @@ class GeneticFeatureSelection:
     def fit(self, X, y):
         self.column_name_list = self._get_columns(X)
         self._init_deap()
-        self._pop = self._toolbox.population(n=self.population_size)
+        self._pop = self._toolbox.population(n=self._population_size)
         self._toolbox.register("evaluate", self._evaluate_individuals, self._pop, X, y)
         self._toolbox.evaluate()
 
-        # ToDO: loop for GA. Repeat as number of generations
+        for _ in range(self._generations):
+            self._pop = self._toolbox.select(self._pop, self._population_size)
+            """
+            TODO:
+            crossover, mutation, 다시 evaluation 필요
+             
+            """
 
     def get_best_features(self):
         pass
