@@ -17,11 +17,11 @@ class GeneticFeatureSelection:
         self._toolbox.register("individual", tools.initIterate, creator.Individual, self._get_individual)
         self._toolbox.register("population", tools.initRepeat, list, self._toolbox.individual)
 
-        self._toolbox.register("crossover", tools.cxOnePoint)
+        self._toolbox.register("crossover", tools.cxMessyOnePoint)
         # self._toolbox.register("mutate", tools.mutation)
         self._toolbox.register("select", tools.selNSGA2)
 
-    def __init__(self, generations, population_size, crossover_rate=0.5, mutation_rate=0.1):
+    def __init__(self, generations, population_size, crossover_rate=0.7, mutation_rate=0.2):
         self.column_name_list = None
         self._pop = None
         self._generations = generations
@@ -29,9 +29,9 @@ class GeneticFeatureSelection:
         self._crossover_rate = crossover_rate
         self._mutation_rate = mutation_rate
 
+
     def _evaluate(self, individual, x_train, x_test, y_train, y_test):
         # TODO : make possible selecting evaluator. Currently fixed with SVC.
-        print('--evaluate--')
         x_train = x_train[individual]
         x_test = x_test[individual]
 
@@ -63,6 +63,24 @@ class GeneticFeatureSelection:
     def _get_columns(self, data_frame):
         return data_frame.columns
 
+    def _get_two_random_index(self, index_length):
+        index1 = random.randint(index_length)
+        index2 = index1
+        while index1 != index2:
+            index2 = random.randint(index_length)
+        return index1, index2
+
+    def _reproduce(self, pop):
+        cross_over_offspring = list()
+        for _ in range(self._crossover_rate * self._population_size):
+            index1, index2 = self._get_two_random_index(len(pop))
+            cross_over_offspring.append(self._toolbox.crossover(pop[index1], pop[index2]))
+
+        """
+        TODO:
+        mutation...
+        """
+
     # fitting for feature selection.
     def fit(self, X, y):
         self.column_name_list = self._get_columns(X)
@@ -70,14 +88,13 @@ class GeneticFeatureSelection:
         self._pop = self._toolbox.population(n=self._population_size)
         self._toolbox.register("evaluate", self._evaluate_individuals, self._pop, X, y)
         self._toolbox.evaluate()
+        handover_rate = 1. - self._crossover_rate - self._mutation_rate
 
         for _ in range(self._generations):
-            self._pop = self._toolbox.select(self._pop, self._population_size)
-            """
-            TODO:
-            crossover, mutation, 다시 evaluation 필요
-             
-            """
+            print("---select----")
+            pop = self._toolbox.select(self._pop, self._population_size * handover_rate)
+            self._reproduce(pop)
+            self._toolbox.evaluate()
 
     def get_best_features(self):
         pass

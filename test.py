@@ -27,5 +27,5 @@ X = X.fillna(0)
 print(X.head())
 print(X.columns)
 
-gfs = GeneticFeatureSelection(generations=2, population_size=5)
+gfs = GeneticFeatureSelection(generations=2, population_size=100)
 gfs.fit(X, y)
